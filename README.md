@@ -6,19 +6,38 @@ Kachalka is a Ukrainian-first workout tracking application for recording trainin
 
 - `backend/` - FastAPI, SQLAlchemy, PostgreSQL, and Alembic.
 - `frontend/` - Vue 3, TypeScript, Vite, Pinia, Vue Router, and vue-i18n.
-- `docker-compose.yml` - local PostgreSQL service.
+- `docker-compose.yml` - local PostgreSQL, backend, and frontend services.
 - `scripts/` - local code-quality checks.
 
 ## Quick Start
 
-### Database
+### Full Stack With Docker
 
 ```powershell
-Copy-Item .env.example .env
+docker compose up --build
+```
+
+The frontend is available at `http://localhost:5173`.
+The API is available at `http://localhost:8000`.
+Interactive API documentation is available at `http://localhost:8000/docs`.
+
+The backend container waits for PostgreSQL, applies Alembic migrations, seeds the default exercise catalog, and then starts FastAPI.
+
+To stop the stack:
+
+```powershell
+docker compose down
+```
+
+### Local Backend And Frontend
+
+Use this mode when you want to run PostgreSQL in Docker but run backend/frontend directly on your machine.
+
+```powershell
 docker compose up -d postgres
 ```
 
-### Backend
+Backend:
 
 ```powershell
 cd backend
@@ -26,12 +45,12 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 Copy-Item .env.example .env
+alembic upgrade head
+python -m app.db.seed
 uvicorn app.main:app --reload
 ```
 
-The API is available at `http://localhost:8000`. Interactive API documentation is available at `http://localhost:8000/docs`.
-
-### Frontend
+Frontend:
 
 ```powershell
 cd frontend
@@ -39,8 +58,6 @@ npm install
 Copy-Item .env.example .env
 npm run dev
 ```
-
-The frontend is available at `http://localhost:5173`.
 
 ## Quality Checks
 
@@ -58,5 +75,5 @@ cd backend
 cd frontend
 npm run lint
 npm run test
-npm run build```
-
+npm run build
+```
