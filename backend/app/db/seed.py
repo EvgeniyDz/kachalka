@@ -34,10 +34,7 @@ MUSCLE_GROUPS = [
 EXERCISES = [
     ExerciseSeed("bench_press", "chest", "barbell", {"uk": "Жим лежачи", "en": "Bench press"}),
     ExerciseSeed(
-        "squat",
-        "legs",
-        "barbell",
-        {"uk": "Присідання зі штангою", "en": "Barbell squat"},
+        "squat", "legs", "barbell", {"uk": "Присідання зі штангою", "en": "Barbell squat"}
     ),
     ExerciseSeed("deadlift", "back", "barbell", {"uk": "Станова тяга", "en": "Deadlift"}),
     ExerciseSeed(
@@ -48,16 +45,10 @@ EXERCISES = [
     ),
     ExerciseSeed("pull_up", "back", "bodyweight", {"uk": "Підтягування", "en": "Pull-up"}),
     ExerciseSeed(
-        "barbell_row",
-        "back",
-        "barbell",
-        {"uk": "Тяга штанги в нахилі", "en": "Barbell row"},
+        "barbell_row", "back", "barbell", {"uk": "Тяга штанги в нахилі", "en": "Barbell row"}
     ),
     ExerciseSeed(
-        "lat_pulldown",
-        "back",
-        "cable",
-        {"uk": "Тяга верхнього блока", "en": "Lat pulldown"},
+        "lat_pulldown", "back", "cable", {"uk": "Тяга верхнього блока", "en": "Lat pulldown"}
     ),
     ExerciseSeed("leg_press", "legs", "machine", {"uk": "Жим ногами", "en": "Leg press"}),
     ExerciseSeed(
@@ -74,16 +65,13 @@ EXERCISES = [
     ),
     ExerciseSeed("plank", "core", "bodyweight", {"uk": "Планка", "en": "Plank"}),
     ExerciseSeed(
-        "romanian_deadlift",
-        "legs",
-        "barbell",
-        {"uk": "Румунська тяга", "en": "Romanian deadlift"},
+        "romanian_deadlift", "legs", "barbell", {"uk": "Румунська тяга", "en": "Romanian deadlift"}
     ),
 ]
 
 
 async def seed_database() -> None:
-    """Insert the default exercise catalog without duplicating existing rows."""
+    """Insert or repair the default exercise catalog without duplicating rows."""
 
     async with AsyncSessionFactory() as session:
         muscle_groups: dict[str, MuscleGroup] = {}
@@ -107,11 +95,11 @@ async def seed_database() -> None:
                 if translation is None:
                     session.add(
                         MuscleGroupTranslation(
-                            muscle_group_id=muscle_group.id,
-                            locale=locale,
-                            name=name,
+                            muscle_group_id=muscle_group.id, locale=locale, name=name
                         )
                     )
+                else:
+                    translation.name = name
 
             muscle_groups[item.code] = muscle_group
 
@@ -126,6 +114,9 @@ async def seed_database() -> None:
                 )
                 session.add(exercise)
                 await session.flush()
+            else:
+                exercise.muscle_group_id = muscle_groups[item.muscle_group_code].id
+                exercise.equipment = item.equipment
 
             for locale, name in item.names.items():
                 translation = await session.scalar(
@@ -136,12 +127,11 @@ async def seed_database() -> None:
                 )
                 if translation is None:
                     session.add(
-                        ExerciseTranslation(
-                            exercise_id=exercise.id,
-                            locale=locale,
-                            name=name,
-                        )
+                        ExerciseTranslation(exercise_id=exercise.id, locale=locale, name=name)
                     )
+                else:
+                    translation.name = name
+                    translation.description = None
 
         await session.commit()
 
