@@ -16,6 +16,7 @@ from app.schemas.workout import (
     WorkoutSummaryRead,
     WorkoutUpdate,
 )
+from app.services.analytics import recalculate_personal_records
 from app.services.exercises import read_exercise
 
 
@@ -200,6 +201,8 @@ async def create_workout(
     replace_workout_exercises(workout, payload.exercises)
     session.add(workout)
     await session.commit()
+    await recalculate_personal_records(session)
+    await session.commit()
 
     created = await get_workout_by_id(session, workout.id)
     if created is None:
@@ -228,6 +231,8 @@ async def update_workout(
         replace_workout_exercises(workout, payload.exercises)
 
     await session.commit()
+    await recalculate_personal_records(session)
+    await session.commit()
 
     updated = await get_workout_by_id(session, workout.id)
     if updated is None:
@@ -239,4 +244,6 @@ async def delete_workout(session: AsyncSession, workout: Workout) -> None:
     """Delete a workout with nested exercises and sets."""
 
     await session.delete(workout)
+    await session.commit()
+    await recalculate_personal_records(session)
     await session.commit()
