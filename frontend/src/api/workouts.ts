@@ -42,6 +42,28 @@ export interface WorkoutListRead {
   offset: number
 }
 
+export interface ExerciseSetInput {
+  set_number?: number | null
+  weight?: number | null
+  reps?: number | null
+  rpe?: number | null
+  notes?: string | null
+}
+
+export interface WorkoutExerciseInput {
+  exercise_id: number
+  order_index?: number | null
+  notes?: string | null
+  sets: ExerciseSetInput[]
+}
+
+export interface WorkoutPayload {
+  date: string
+  title?: string | null
+  notes?: string | null
+  exercises: WorkoutExerciseInput[]
+}
+
 export interface WorkoutListParams {
   limit?: number
   offset?: number
@@ -71,4 +93,30 @@ export function getWorkouts(params: WorkoutListParams = {}): Promise<WorkoutList
       date_to: params.dateTo,
     })}`,
   )
+}
+
+export function getWorkout(workoutId: number, locale: string): Promise<WorkoutRead> {
+  return apiRequest<WorkoutRead>(`/workouts/${workoutId}${buildQuery({ locale })}`)
+}
+
+export function createWorkout(payload: WorkoutPayload, locale: string): Promise<WorkoutRead> {
+  return apiRequest<WorkoutRead>(`/workouts${buildQuery({ locale })}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateWorkout(
+  workoutId: number,
+  payload: WorkoutPayload,
+  locale: string,
+): Promise<WorkoutRead> {
+  return apiRequest<WorkoutRead>(`/workouts/${workoutId}${buildQuery({ locale })}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteWorkout(workoutId: number): Promise<void> {
+  return apiRequest<void>(`/workouts/${workoutId}`, { method: 'DELETE' })
 }

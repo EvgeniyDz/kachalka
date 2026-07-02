@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import DashboardView from '@/views/DashboardView.vue'
 import ExercisesView from '@/views/ExercisesView.vue'
 import PlaceholderView from '@/views/PlaceholderView.vue'
+import WorkoutsView from '@/views/WorkoutsView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -16,7 +17,7 @@ export const router = createRouter({
     {
       path: '/workouts',
       name: 'workouts',
-      component: PlaceholderView,
+      component: WorkoutsView,
       meta: { titleKey: 'navigation.workouts' },
     },
     {

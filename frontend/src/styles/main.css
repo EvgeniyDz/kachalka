@@ -598,3 +598,254 @@ a:focus-visible {
     text-align: left;
   }
 }
+.dashboard-panel-heading--stacked {
+  align-items: flex-start;
+}
+
+.dashboard-toolbar {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+}
+
+.progress-chart-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.progress-chart-summary {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+}
+
+.progress-chart-summary span {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.progress-chart-summary strong {
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.progress-chart-bars {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(5.75rem, 1fr));
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.progress-chart-point {
+  display: grid;
+  min-width: 5.75rem;
+  gap: 0.45rem;
+}
+
+.progress-chart-point__bar {
+  display: flex;
+  height: 8rem;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 0.375rem;
+  background: #e0f2fe;
+  padding: 0.5rem;
+}
+
+.progress-chart-point__bar span {
+  display: block;
+  width: 100%;
+  min-height: 0.625rem;
+  border-radius: 0.25rem;
+  background: #0284c7;
+}
+
+.progress-chart-point strong {
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.progress-chart-point small {
+  color: #64748b;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+.workout-history-row {
+  align-items: stretch;
+}
+
+.workout-history-row--active {
+  background: #f7fee7;
+}
+
+.workout-history-row__main {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.workout-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.workout-form__wide {
+  grid-column: 1 / -1;
+}
+
+.workout-builder {
+  display: grid;
+  gap: 1rem;
+}
+
+.workout-builder__heading,
+.workout-sets__head,
+.workout-exercise-card__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.workout-builder__heading strong,
+.workout-sets__head span {
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.workout-exercise-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.workout-exercise-card__header .field-label {
+  flex: 1;
+}
+
+.workout-sets {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.workout-set-row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 0.45fr) repeat(3, minmax(5rem, 0.5fr)) minmax(7rem, 1fr) 2.5rem 2.5rem;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.workout-set-row strong {
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.workout-details {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.workout-details__summary {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.workout-details__summary strong,
+.workout-detail-exercise strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.9375rem;
+  font-weight: 900;
+}
+
+.workout-details__summary span,
+.workout-detail-exercise span,
+.workout-detail-exercise p,
+.workout-details__summary p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.workout-detail-exercise {
+  display: grid;
+  gap: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.workout-detail-exercise:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.workout-detail-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.workout-detail-sets span {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  border-radius: 0.25rem;
+  background: #ecfccb;
+  padding: 0 0.5rem;
+  color: #365314;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+@media (min-width: 768px) {
+  .workout-form {
+    grid-template-columns: minmax(11rem, 0.45fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .workout-set-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .workout-builder__heading,
+  .workout-sets__head,
+  .workout-exercise-card__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workout-set-row {
+    grid-template-columns: 1fr;
+  }
+}

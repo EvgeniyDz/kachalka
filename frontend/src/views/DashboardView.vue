@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import { Activity, BarChart3, CalendarDays, Dumbbell, Flame, Plus, Trophy } from '@lucide/vue'
-import { computed } from 'vue'
+import { Activity, BarChart3, CalendarDays, Dumbbell, Flame, LineChart, Plus, Trophy } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import {
+  getExerciseProgress,
   getLatestRecords,
   getMuscleGroupFrequency,
   getWeeklyVolume,
+  type ExerciseProgressPointRead,
   type PersonalRecordRead,
 } from '@/api/analytics'
+import { getExercises } from '@/api/exercises'
 import { getHealth } from '@/api/health'
 import { getWorkouts } from '@/api/workouts'
 
 const { locale, t } = useI18n()
+const selectedExerciseId = ref<number | null>(null)
 
 const today = computed(() => formatDateInput(new Date()))
 
@@ -55,11 +59,24 @@ const muscleGroupsQuery = useQuery({
   queryFn: () => getMuscleGroupFrequency(locale.value, 5),
 })
 
+const exercisesQuery = useQuery({
+  queryKey: ['dashboard', 'exercises', locale],
+  queryFn: () => getExercises({ locale: locale.value, limit: 100, includeCustom: true }),
+})
+
+const progressQuery = useQuery({
+  queryKey: ['dashboard', 'exercise-progress', selectedExerciseId],
+  queryFn: () => getExerciseProgress(selectedExerciseId.value ?? 0),
+  enabled: computed(() => selectedExerciseId.value !== null),
+})
+
 
 const recentWorkouts = computed(() => workoutsQuery.data.value?.items ?? [])
 const weeklyVolume = computed(() => weeklyVolumeQuery.data.value ?? [])
 const latestRecords = computed(() => recordsQuery.data.value ?? [])
 const frequentGroups = computed(() => muscleGroupsQuery.data.value ?? [])
+const exerciseOptions = computed(() => exercisesQuery.data.value?.items ?? [])
+const progressPoints = computed(() => progressQuery.data.value?.slice(-8) ?? [])
 
 const currentWeekVolume = computed(() => {
   const point = weeklyVolume.value.at(-1)
@@ -83,12 +100,26 @@ const maxWeeklyVolume = computed(() => {
   return Math.max(1, ...volumes)
 })
 
+const maxProgressWeight = computed(() => {
+  const weights = progressPoints.value.map((point) => Number(point.weight ?? 0))
+  return Math.max(1, ...weights)
+})
+
+const latestProgressPoint = computed(() => progressPoints.value.at(-1) ?? null)
+
+watch(exerciseOptions, (options) => {
+  if (selectedExerciseId.value === null && options.length > 0) {
+    selectedExerciseId.value = options[0].id
+  }
+})
+
 const hasDashboardData = computed(
   () =>
     recentWorkouts.value.length > 0 ||
     weeklyVolume.value.length > 0 ||
     latestRecords.value.length > 0 ||
-    frequentGroups.value.length > 0,
+    frequentGroups.value.length > 0 ||
+    progressPoints.value.length > 0,
 )
 
 const isDashboardLoading = computed(
@@ -104,7 +135,8 @@ const hasDashboardError = computed(
     workoutsQuery.isError.value ||
     weeklyVolumeQuery.isError.value ||
     recordsQuery.isError.value ||
-    muscleGroupsQuery.isError.value,
+    muscleGroupsQuery.isError.value ||
+    exercisesQuery.isError.value,
 )
 
 const healthLabel = computed(() => {
@@ -152,6 +184,19 @@ function formatDate(value: string): string {
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(value)
+}
+
+function formatProgressPoint(point: ExerciseProgressPointRead): string {
+  const weight = point.weight
+    ? t('units.kilogramsValue', { value: formatNumber(Number(point.weight)) })
+    : t('exercises.noWeight')
+  const reps = point.reps !== null ? t('units.repsValue', { value: point.reps }) : t('exercises.repsShort')
+  return `${weight} / ${reps}`
+}
+
+function progressBarHeight(point: ExerciseProgressPointRead): string {
+  const weight = Number(point.weight ?? 0)
+  return `${Math.max(10, (weight / maxProgressWeight.value) * 100)}%`
 }
 
 function formatRecordValue(record: PersonalRecordRead): string {
@@ -264,6 +309,53 @@ function recordTypeLabel(recordType: string): string {
           </div>
 
           <div v-else class="state-block">{{ t('dashboard.noAnalytics') }}</div>
+        </section>
+
+        <section class="content-panel">
+          <div class="panel-heading dashboard-panel-heading--stacked">
+            <div>
+              <h3 class="panel-title">{{ t('dashboard.exerciseProgressChart') }}</h3>
+              <p class="panel-subtitle">{{ t('dashboard.exerciseProgressSubtitle') }}</p>
+            </div>
+            <LineChart :size="20" class="text-sky-700" />
+          </div>
+
+          <div class="dashboard-toolbar">
+            <label class="field-label">
+              {{ t('dashboard.chooseExercise') }}
+              <select v-model.number="selectedExerciseId" class="field-control">
+                <option v-for="exercise in exerciseOptions" :key="exercise.id" :value="exercise.id">
+                  {{ exercise.name }}
+                </option>
+              </select>
+            </label>
+          </div>
+
+          <div v-if="exercisesQuery.isPending.value || progressQuery.isPending.value" class="state-block">
+            {{ t('common.loading') }}
+          </div>
+
+          <div v-else-if="!exerciseOptions.length" class="state-block">
+            {{ t('exercises.empty') }}
+          </div>
+
+          <div v-else-if="progressPoints.length" class="progress-chart-panel">
+            <div class="progress-chart-summary">
+              <span>{{ t('dashboard.latestSet') }}</span>
+              <strong v-if="latestProgressPoint">{{ formatProgressPoint(latestProgressPoint) }}</strong>
+            </div>
+            <div class="progress-chart-bars">
+              <article v-for="point in progressPoints" :key="point.exercise_set_id" class="progress-chart-point">
+                <div class="progress-chart-point__bar">
+                  <span :style="{ height: progressBarHeight(point) }" />
+                </div>
+                <strong>{{ formatProgressPoint(point) }}</strong>
+                <small>{{ formatDate(point.workout_date) }}</small>
+              </article>
+            </div>
+          </div>
+
+          <div v-else class="state-block">{{ t('exercises.noProgress') }}</div>
         </section>
       </div>
 
