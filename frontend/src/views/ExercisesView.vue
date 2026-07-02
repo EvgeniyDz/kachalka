@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import {
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   Dumbbell,
@@ -15,6 +16,7 @@ import {
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { getExerciseProgress } from '@/api/analytics'
 import {
   createExercise,
   deleteExercise,
@@ -32,6 +34,7 @@ const selectedMuscleGroup = ref('')
 const includeCustom = ref(true)
 const page = ref(0)
 const editingExercise = ref<ExerciseRead | null>(null)
+const selectedExercise = ref<ExerciseRead | null>(null)
 const formError = ref('')
 const limit = 10
 
@@ -73,11 +76,36 @@ const exercisesQuery = useQuery({
     }),
 })
 
+const progressQuery = useQuery({
+  queryKey: computed(() => ['exercise-progress', selectedExercise.value?.id ?? null]),
+  queryFn: () => {
+    if (selectedExercise.value === null) return Promise.resolve([])
+    return getExerciseProgress(selectedExercise.value.id)
+  },
+})
+
 const exercises = computed(() => exercisesQuery.data.value?.items ?? [])
+const progressPoints = computed(() => progressQuery.data.value ?? [])
 const total = computed(() => exercisesQuery.data.value?.total ?? 0)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
 const currentPageLabel = computed(() => `${page.value + 1} / ${totalPages.value}`)
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
+
+const progressStats = computed(() => {
+  const points = progressPoints.value
+  const weights = points.map((point) => Number(point.weight ?? 0)).filter((value) => value > 0)
+  const volumes = points.map((point) => Number(point.volume ?? 0)).filter((value) => value > 0)
+  const estimatedOneRepMaxes = points
+    .map((point) => Number(point.estimated_1rm ?? 0))
+    .filter((value) => value > 0)
+
+  return {
+    setCount: points.length,
+    bestWeight: Math.max(0, ...weights),
+    totalVolume: volumes.reduce((sum, value) => sum + value, 0),
+    bestEstimatedOneRepMax: Math.max(0, ...estimatedOneRepMaxes),
+  }
+})
 
 const createMutation = useMutation({
   mutationFn: (payload: ExercisePayload) => createExercise(payload, locale.value),
@@ -141,6 +169,14 @@ function editExercise(exercise: ExerciseRead) {
   form.enDescription = translation(exercise, 'en')?.description ?? ''
 }
 
+function selectExercise(exercise: ExerciseRead) {
+  selectedExercise.value = exercise
+}
+
+function closeProgressModal() {
+  selectedExercise.value = null
+}
+
 function buildPayload(): ExercisePayload | null {
   if (!form.muscleGroupCode || !form.ukName.trim() || !form.enName.trim()) {
     formError.value = t('exercises.formRequired')
@@ -190,6 +226,18 @@ function nextPage() {
   if (page.value + 1 < totalPages.value) {
     page.value += 1
   }
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 2 }).format(value)
+}
+
+function formatWeight(value: number): string {
+  return t('units.kilogramsValue', { value: formatNumber(value) })
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat(locale.value).format(new Date(value))
 }
 </script>
 
@@ -343,6 +391,14 @@ function nextPage() {
               {{ exercise.code }}
             </code>
             <button
+              class="icon-button border border-slate-200 bg-white"
+              type="button"
+              :aria-label="t('exercises.viewProgress')"
+              @click="selectExercise(exercise)"
+            >
+              <BarChart3 :size="17" />
+            </button>
+            <button
               v-if="exercise.is_custom"
               class="icon-button border border-slate-200 bg-white"
               type="button"
@@ -380,5 +436,64 @@ function nextPage() {
         </button>
       </div>
     </section>
+
+    <Teleport to="body">
+      <div v-if="selectedExercise" class="modal-backdrop" @click.self="closeProgressModal">
+        <section class="modal-panel" role="dialog" aria-modal="true" :aria-label="t('exercises.progressTitle')">
+          <div class="panel-heading">
+            <div>
+              <h3 class="panel-title">{{ t('exercises.progressTitle') }}</h3>
+              <p class="panel-subtitle">{{ selectedExercise.name }}</p>
+            </div>
+            <button class="icon-button border border-slate-200 bg-white" type="button" :aria-label="t('common.close')" @click="closeProgressModal">
+              <X :size="18" />
+            </button>
+          </div>
+
+          <div v-if="progressQuery.isPending.value" class="state-block">
+            {{ t('common.loading') }}
+          </div>
+
+          <div v-else-if="progressPoints.length === 0" class="state-block">
+            {{ t('exercises.noProgress') }}
+          </div>
+
+          <div v-else class="modal-panel__body">
+            <div class="progress-stats-grid">
+              <article class="progress-stat">
+                <span>{{ t('exercises.setCount') }}</span>
+                <strong>{{ progressStats.setCount }}</strong>
+              </article>
+              <article class="progress-stat">
+                <span>{{ t('exercises.bestWeight') }}</span>
+                <strong>{{ formatWeight(progressStats.bestWeight) }}</strong>
+              </article>
+              <article class="progress-stat">
+                <span>{{ t('exercises.totalVolume') }}</span>
+                <strong>{{ formatWeight(progressStats.totalVolume) }}</strong>
+              </article>
+              <article class="progress-stat">
+                <span>{{ t('exercises.bestEstimatedOneRepMax') }}</span>
+                <strong>{{ formatWeight(progressStats.bestEstimatedOneRepMax) }}</strong>
+              </article>
+            </div>
+
+            <div class="divide-y divide-slate-200">
+              <article v-for="point in progressPoints" :key="point.exercise_set_id" class="progress-row">
+                <div>
+                  <strong>{{ formatDate(point.workout_date) }}</strong>
+                  <span>{{ t('exercises.setNumber', { number: point.set_number }) }}</span>
+                </div>
+                <p>
+                  {{ point.weight ? t('units.kilogramsValue', { value: point.weight }) : t('exercises.noWeight') }}
+                  / {{ point.reps ?? 0 }} {{ t('exercises.repsShort') }}
+                  / {{ point.volume ? t('units.kilogramsValue', { value: point.volume }) : t('exercises.noVolume') }}
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
