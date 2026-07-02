@@ -19,7 +19,7 @@ export const en = {
     totalWorkouts: 'Workouts',
     weeklyVolume: 'Volume this week',
     currentStreak: 'Weeks in a row',
-    latestRecord: 'Latest record',
+    latestRecord: 'Latest records',
     latestRecordSubtitle: 'Personal achievements',
     noRecords: 'Records will appear after your first workouts',
     recentActivity: 'Recent activity',
@@ -31,6 +31,21 @@ export const en = {
     connected: 'Connected',
     unavailable: 'Unavailable',
     checking: 'Checking',
+    untitledWorkout: 'Untitled workout',
+    exerciseCount: 'Exercises: {count}',
+    setsCount: 'Sets: {count}',
+    weeklyVolumeChart: 'Weekly volume',
+    monthlyWorkouts: 'Workouts this month: {count}',
+    weekOf: 'Week of {date}',
+    noAnalytics: 'Analytics will appear after your first logged sets',
+    frequentGroups: 'Frequent groups',
+    frequentGroupsSubtitle: 'What you train most often',
+    recordTypes: {
+      max_weight: 'Max weight',
+      max_volume: 'Max volume',
+      max_reps: 'Max reps',
+      estimated_1rm: 'Estimated 1RM',
+    },
   },
   exercises: {
     eyebrow: 'Exercise catalog',
@@ -94,5 +109,6 @@ export const en = {
   },
   units: {
     kilogramsValue: '{value} kg',
+    repsValue: '{value} reps',
   },
 } as const
